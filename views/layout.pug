@@ -21,6 +21,10 @@ html
                 form.form-inline.mt-2.mt-md-0
                    
         .container
+            != messages('message', locals)
+            if errors
+                each error, i in errors.errors
+                    div(class='alert alert-danger') #{error.msg}
             block content
             br
             hr
