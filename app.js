@@ -3,18 +3,19 @@ const path = require("path");
 const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
 const session = require("express-session");
-//const expressValidator = require("express-validator");
 const flash = require("connect-flash");
+const config = require("./config/database")
+const passport = require("passport")
 
-mongoose.connect("mongodb://localhost/nodekb", { useNewUrlParser: true });
+mongoose.connect(config.database, { useNewUrlParser: true });
 var db = mongoose.connection;
 
 //check connection
-db.once("open", function() {
+db.once("open", function () {
   console.log("connected to the mongoDB");
 });
 //Check for DB errors
-db.on("error", function(err) {
+db.on("error", function (err) {
   console.log(err);
 });
 
@@ -46,36 +47,28 @@ app.use(
   })
 );
 
-// // Express Validator Middleware
-// app.use(
-//   expressValidator({
-//     errorFormatter: function(param, msg, value) {
-//       var namespace = param.split("."),
-//         root = namespace.shift(),
-//         formParam = root;
+//passport config
+require("./config/passport")(passport);
 
-//       while (namespace.length) {
-//         formParam += "[" + namespace.shift() + "]";
-//       }
-//       return {
-//         param: formParam,
-//         msg: msg,
-//         value: value
-//       };
-//     }
-//   })
-// );
+//Passport Middleware
+app.use(passport.initialize());
+app.use(passport.session());
 
 //Express Messages Middleware
 app.use(require("connect-flash")());
-app.use(function(req, res, next) {
+
+app.use(function (req, res, next) {
   res.locals.messages = require("express-messages")(req, res);
   next();
 });
 
+app.get("*", function (req, res, next) {
+  res.locals.user = req.user || null;
+  next();
+})
 //Home route
-app.get("/", function(req, res) {
-  Article.find({}, function(err, articles) {
+app.get("/", function (req, res) {
+  Article.find({}, function (err, articles) {
     if (err) {
       console.log(err);
     } else {
@@ -87,80 +80,15 @@ app.get("/", function(req, res) {
   });
 });
 
-app.get("/articles/add", function(req, res) {
-  res.render("add_article", {
-    title: "add article"
-  });
-});
 
-//Get single article
-app.get("/article/:id", function(req, res) {
-  Article.findById(req.params.id, function(err, article) {
-    res.render("article", {
-      article: article
-    });
-  });
-});
 
-//Add Submit POST Route
-app.post("/articles/add", function(req, res) {
-  let article = new Article();
-  article.title = req.body.title;
-  article.author = req.body.author;
-  article.body = req.body.body;
-
-  article.save(function(err) {
-    if (err) {
-      console.log(err);
-      return;
-    } else {
-      req.flash("success", "Article Added");
-      res.redirect("/");
-    }
-  });
-});
-
-//load Edit Form
-app.get("/article/edit/:id", function(req, res) {
-  Article.findById(req.params.id, function(err, article) {
-    res.render("edit_article", {
-      title: "Edit Article",
-      article: article
-    });
-  });
-});
-
-//Update Submit POST Route
-app.post("/articles/edit/:id", function(req, res) {
-  let article = {};
-  article.title = req.body.title;
-  article.author = req.body.author;
-  article.body = req.body.body;
-
-  let query = { _id: req.params.id };
-  Article.update(query, article, function(err) {
-    if (err) {
-      console.log(err);
-      return;
-    } else {
-      req.flash("success", "Article Updated");
-      res.redirect("/");
-    }
-  });
-});
-
-app.delete("/article/:id", function(req, res) {
-  let query = { _id: req.params.id };
-
-  Article.remove(query, function(err) {
-    if (err) {
-      console.log(err);
-    }
-    res.send("Success");
-  });
-});
+//Rourter Files
+let articles = require("./routes/articles.js");
+let users = require("./routes/users")
+app.use("/articles", articles);
+app.use("/users", users);
 
 // Start Server
-app.listen(3000, function() {
+app.listen(3000, function () {
   console.log("Server started on port 3000..");
 });

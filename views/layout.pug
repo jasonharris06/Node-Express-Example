@@ -10,17 +10,28 @@ html
             button.navbar-toggler(type='button', data-toggle='collapse', data-target='#navbarCollapse', aria-controls='navbarCollapse', aria-expanded='false', aria-label='Toggle navigation')
                 span.navbar-toggler-icon
             #navbarCollapse.collapse.navbar-collapse
-                ul.navbar-nav.mr-auto
+                ul.nav.navbar-nav.mr-auto
                     li.nav-item.active
                         a.nav-link(href='/')
                             | Home 
-                            span.sr-only (current)
+                            
                     li.nav-item
                         a.nav-link(href='/articles/add') Add Article
-                 
-                form.form-inline.mt-2.mt-md-0
+                ul.nav.navbar-nav.navbar-right
+                    if user
+                        li.nav-item
+                            a.nav-link(href='/users/logout') logout
+                    else
+                        li.nav-item
+                            a.nav-link(href='/users/register') Register
+                        
+                        li.nav-item
+                            a.nav-link(href='/users/login') login
+
+                
                    
         .container
+            br
             != messages('message', locals)
             if errors
                 each error, i in errors.errors
